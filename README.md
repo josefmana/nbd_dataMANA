@@ -5,8 +5,9 @@ The goal is to take-in all kinds of disparate data sets and spit out pre-process
 
 After extracting and wrangling the data, they are distributed for analysis to following repositories:
 
-  - [irTEST](https://github.com/josefmana/nbd_irTEST.git) for IRT analyses where relevant
-  - [reTEST](https://github.com/josefmana/nbd_reTEST.git) for test-retest reliability estimation
-  - [nonMEM](https://github.com/josefmana/nbd_nonMEM.git) for a study of criterial validity of the nonverbal memory test from NBD (by Andrea Sadecká)
-  - [normCALC](https://github.com/josefmana/nbd_normCALC.git) for a calculation of norms
+  - [irTEST](https://github.com/josefmana/nbd_irTEST.git) for IRT analyses where relevant,
+  - [reTEST](https://github.com/josefmana/nbd_reTEST.git) for test-retest reliability estimation,
+  - [paraREL](https://github.com/josefmana/nbd_paraREL.git) for parallel versions reliability estimation,
+  - [nonMEM](https://github.com/josefmana/nbd_nonMEM.git) for a study of criterial validity of the nonverbal memory test from NBD (by Andrea Sadecká),
+  - [normCALC](https://github.com/josefmana/nbd_normCALC.git) for a calculation of norms.
   
