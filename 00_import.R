@@ -103,7 +103,7 @@ moveit <-
         list.files(origin),
         function(i)
         {
-          file.copy( from = paste0(origin,"/",i), to = paste0(target,"/_raw/",i) )
+          file.copy( from = paste0(origin,"/",i), to = paste0(target,"/_raw/",i), overwrite = T )
           print( paste0("Copied from ",origin,"/",i," to ",target,"/_raw/",i) )
         
         })
