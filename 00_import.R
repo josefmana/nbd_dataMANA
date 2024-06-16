@@ -3,14 +3,10 @@
 # clean environment
 rm( list = ls() )
 
-# list required packages into a character object
-pkgs <- c("here","readxl","tidyverse")
-
-# load or install packages as needed
-for ( i in pkgs ) {
-  if ( i %in% rownames( installed.packages() ) == F ) install.packages(i) # install if it ain't installed yet
-  if ( i %in% names( sessionInfo()$otherPkgs ) == F ) library( i , character.only = T ) # load if it ain't loaded yet
-}
+# read libraries
+library(here)
+library(readxl)
+library(tidyverse)
 
 # prepare folders for imported data
 if( !dir.exists("_data") ) dir.create("_data")
@@ -19,98 +15,102 @@ if( !dir.exists("_data") ) dir.create("_data")
 # IN-HOUSE FUNCTIONS ----
 
 # read excel data
-dread <-
-  
-  function( f = "Validacni_studie", h = head ) {
+dread <- function( f = "Validacni_studie", h = head ) {
     
-    # prepare the pathway to data
-    p <- here( "_raw", "data", "Validační studie_matice", paste0(f,".xlsx") )
+  # prepare the pathway to data
+  p <- here( "_raw", "data", "Validační studie_matice", paste0(f,".xlsx") )
     
-    # keep header information of included lists only
-    h <- h[ h[,f] > 0, ]
+  # keep header information of included lists only
+  h <- h[ h[,f] > 0, ]
     
-    # read it
-    out <-
-      with(
-        h,
-        lapply(
-          setNames(1:length(sheet),sheet),
-          function(i)
-            read_excel( path = p, sheet = sheet[i], skip = get(f)[i]-1, na = c(" ","NA","NV","N/A","*","#REF!") )
-        )
-      )
+  # read it
+  out <- with(
     
-    # return it
-    return(out)
+    h,
+    lapply(
+      setNames(1:length(sheet),sheet),
+      function(i)
+        read_excel( path = p, sheet = sheet[i], skip = get(f)[i]-1, na = c(" ","NA","NV","N/A","*","#REF!") )
+    )
+  )
     
-  }
+  # return it
+  return(out)
+    
+}
 
 # check ID names
-idcheck <-
+idcheck <- function(d) {
   
-  function(d){
-    
-    lapply(
-      setNames( names(d), names(d) ),
-      function(i)
-        unique( sapply( names(d[[i]]), function(j) colnames(d[[i]][[j]])[1]) )
-    )
-    
-  }
+  lapply(
+    setNames( names(d), names(d) ),
+    function(i)
+      unique( sapply( names(d[[i]]), function(j) colnames(d[[i]][[j]])[1]) )
+  )
+}
 
 # save as csv
-saveit <-
+saveit <- function(d) {
   
-  function(d) {
+  invisible(
     
-    invisible(
-      
-      sapply(
-        names(d),
-        function(i) {
-          
-          if( !dir.exists( here("_data",i) ) ) dir.create( here("_data",i) ) # prepare folders for data
-          
-          # saving proper
-          sapply(
-            names(d[[i]]),
-            function(j) {
+    sapply(
+      names(d),
+      function(i) {
+        
+        if( !dir.exists( here("_data",i) ) ) dir.create( here("_data",i) ) # prepare folders for data
+        
+        # saving proper
+        sapply(
+          names(d[[i]]),
+          function(j) {
+            
+            dir <- here( "_data", i, paste0(j,".csv") )
+            write.table( d[[i]][[j]], dir, sep = "\t", row.names = F, quote = F )
+            print( paste0(j," from ",i," saved into ",dir) )
 
-              dir <- here( "_data", i, paste0(j,".csv") )
-              write.table( d[[i]][[j]], dir, sep = "\t", row.names = F, quote = F )
-              print( paste0(j," from ",i," saved into ",dir) )
+          })
 
-            })
+      })
 
-        })
-
-    )
+  )
     
-  }
+}
 
 # move based on mover csv file
-moveit <-
+moveit <- function(origin, target, files = "all", folder = NA) {
   
-  function(origin,target) {
+  # prepare a _raw folder in target directory
+  if( !dir.exists(paste0(target,"/_raw") ) ) dir.create( paste0(target,"/_raw") )
+  if( !is.na(folder) ) if( !dir.exists(paste0(target,"/_raw/",folder) ) ) dir.create( paste0(target,"/_raw/",folder) )
+  
+  # extract files to move
+  # if none are specified, move all files from the origin directory
+  if("all" %in% files) list <- list.files(origin) else list <- files
+  
+  # prepare origina and target files
+  temp <- data.frame(
     
-    # prepare a _raw folder in target directory
-    if( !dir.exists(paste0(target,"/_raw") ) ) dir.create( paste0(target,"/_raw") )
+    from = paste0(origin,"/",list),
+    to = if( !is.na(folder) ) paste0(target,"/_raw/",folder,"/",list) else paste0(target,"/_raw/",list)
     
-    # loop through all data files moving them origin->target
-    invisible(
-      
-      sapply(
-        list.files(origin),
-        function(i)
-        {
-          file.copy( from = paste0(origin,"/",i), to = paste0(target,"/_raw/",i), overwrite = T )
-          print( paste0("Copied from ",origin,"/",i," to ",target,"/_raw/",i) )
+  )
+  
+  # loop through all data files moving them origin->target
+  invisible(
+    
+    sapply(
+      1:nrow(temp),
+      function(i) {
         
-        })
+        file.copy( from = temp[i,"from"], to = temp[i,"to"], overwrite = T )
+        print( paste0("Copied from ",temp[i,"from"]," to ",temp[i,"to"]) )
+        
+      })
 
-    )
+  )
   
-  }
+}
 
 
 # READ DATA-SETS ----
@@ -163,9 +163,12 @@ write.table( v, here("_data","helpers","vars.csv"), sep = ";", quote = F, row.na
 mov <- read.csv( here("_raw","helpers","movers.csv"), sep = ";" )
 
 # move them
-for ( i in 1:nrow(mov) ) moveit( origin = mov[i,"from"], target = mov[i,"to"] )
-
-
-# SESSION INFO ----
-capture.output( sessionInfo(), file = "import_envir.txt" )
+for ( i in 1:nrow(mov) )  moveit(
+  
+  origin = mov[i,"from"],
+  target = mov[i,"to"],
+  files = strsplit( mov[i,"files"], "," )[[1]],
+  folder = mov[i,"folder"]
+  
+) 
 
